@@ -1,0 +1,26 @@
+[project]
+name = "task-prediction"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aware-protos",
+    "nats-py>=2.14.0",
+    "pandas>=3.0.1",
+    "pyarrow>=23.0.1",
+    "pymovements>=0.26.0",
+    "tsfresh>=0.21.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.workspace]
+members = [
+    "aware-protos/python",
+]
+
+[tool.uv.sources]
+aware-protos = { workspace = true }
