@@ -1,6 +1,5 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any
 from enum import IntEnum
 
 class AwareActionStatus(IntEnum):
@@ -19,13 +18,3 @@ class AwareActionInteraction:
     status: AwareActionStatus
     details: str
     suggestion_mode_enabled: bool
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "timestamp": self.timestamp,
-            "callsign": self.callsign,
-            "action_uuid": self.uuid,
-            "action_status": self.status.value,
-            "action_details": self.details,
-            "suggestion_mode_enabled": self.suggestion_mode_enabled
-        }

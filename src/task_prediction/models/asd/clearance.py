@@ -1,6 +1,5 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any
 from enum import StrEnum
 
 class ClearanceType(StrEnum):
@@ -15,11 +14,3 @@ class Clearance:
 
     type: ClearanceType
     clearance: str
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "timestamp": self.timestamp,
-            "callsign": self.callsign,
-            "clearance_type": self.type.value,
-            "clearance": self.clearance,
-        }

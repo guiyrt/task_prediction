@@ -33,7 +33,7 @@ from .transfer import Transfer, TransferType
 
 from typing import TypeAlias
 
-AsdEvent: TypeAlias = (
+type AsdEvent = (
     AwareActionInteraction | Clearance | DistanceMeasurementBase | 
     KeyboardShortcut | MousePosition | Popup | RouteInteraction | 
     SepToolBase | SpeedVectorBase | TrackLabelPosition | 

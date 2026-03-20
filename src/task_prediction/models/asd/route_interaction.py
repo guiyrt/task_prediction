@@ -1,6 +1,5 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any
 from enum import IntEnum
 
 class RouteInteractionType(IntEnum):
@@ -22,11 +21,3 @@ class RouteInteraction:
 
     type: RouteInteractionType
     value: str
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "timestamp": self.timestamp,
-            "callsign": self.callsign,
-            "action_type": self.type.value,
-            "value": self.value,
-        }
