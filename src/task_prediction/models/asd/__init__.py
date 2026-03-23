@@ -30,9 +30,6 @@ from .track_mark import TrackMark, TrackMarkType, TrackMarkVariant
 from .track_screen_position import TrackScreenPosition
 from .transfer import Transfer, TransferType
 
-
-from typing import TypeAlias
-
 type AsdEvent = (
     AwareActionInteraction | Clearance | DistanceMeasurementBase | 
     KeyboardShortcut | MousePosition | Popup | RouteInteraction | 

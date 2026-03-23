@@ -4,7 +4,7 @@ from typing import Any
 from .base import TableDefinition, TIMESTAMP_COL, CATEGORY_TYPE
 from ....models import AsdEvent
 
-def build_asd_events_timeline_cols(batch: list[AsdEvent]) -> dict[str, list[Any]]:
+def build_asd_activity_timeline_cols(batch: list[AsdEvent]) -> dict[str, list[Any]]:
     size = len(batch)
 
     timestamp, event_type = [None] * size, [None] * size
@@ -18,10 +18,10 @@ def build_asd_events_timeline_cols(batch: list[AsdEvent]) -> dict[str, list[Any]
         "event_type": event_type
     }
 
-ASD_EVENTS_TIMELINE_DEFINITION: TableDefinition[AsdEvent] = TableDefinition(
+ASD_ACTIVITY_TIMELINE_DEFINITION: TableDefinition[AsdEvent] = TableDefinition(
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("event_type", CATEGORY_TYPE, nullable=False),
     ]),
-    extractor=build_asd_events_timeline_cols,
+    extractor=build_asd_activity_timeline_cols,
 )
