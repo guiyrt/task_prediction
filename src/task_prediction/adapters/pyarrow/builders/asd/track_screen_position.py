@@ -19,7 +19,7 @@ def build_track_screen_cols(batch: list[TrackScreenPosition]) -> dict[str, list[
         "callsign": callsign,
         "x": x,
         "y": y,
-        "visible": is_visible
+        "is_visible": is_visible
     }
 
 TRACK_SCREEN_POSITION_DEFINITION: TableDefinition[TrackScreenPosition] = TableDefinition(
@@ -28,7 +28,7 @@ TRACK_SCREEN_POSITION_DEFINITION: TableDefinition[TrackScreenPosition] = TableDe
         CALLSIGN_COL,
         pa.field("x", pa.int16(), nullable=False),
         pa.field("y", pa.int16(), nullable=False),
-        pa.field("visible", pa.bool_(), nullable=False),
+        pa.field("is_visible", pa.bool_(), nullable=False),
     ]),
     extractor=build_track_screen_cols,
 )

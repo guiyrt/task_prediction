@@ -36,3 +36,21 @@ type AsdEvent = (
     SepToolBase | SpeedVectorBase | TrackLabelPosition | 
     TrackMark | TrackScreenPosition | Transfer
 )
+
+def get_base_asd_event_type(event: AsdEvent) -> type[AsdEvent]:
+    """
+    Returns the Base class type for polymorphic ASD events, 
+    or the exact class type for standard events.
+    """
+    match event:
+        case DistanceMeasurementAdded() | DistanceMeasurementPositionUpdated() | DistanceMeasurementRemoved():
+            return DistanceMeasurementBase
+        
+        case SepToolOpened() | SepToolConnected() | SepToolClosed():
+            return SepToolBase
+            
+        case SpeedVectorLength() | SpeedVectorModeUpdated() | SpeedVectorVisibility():
+            return SpeedVectorBase
+            
+        case _:
+            return type(event)

@@ -9,9 +9,17 @@ dependencies = [
     "nats-py>=2.14.0",
     "pandas>=3.0.1",
     "pyarrow>=23.0.1",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
     "pymovements>=0.26.0",
+    "rich>=14.3.3",
     "tsfresh>=0.21.1",
+    "typer>=0.24.1",
+    "xgboost-cpu>=3.2.0",
 ]
+
+[project.scripts]
+task-pred = "task_prediction.__main__:app"
 
 [build-system]
 requires = ["uv_build>=0.9.6,<0.10.0"]
