@@ -1,4 +1,3 @@
-import sys
 import logging
 import nats
 
@@ -68,13 +67,10 @@ def create_sinks(
         )
     
     if settings.terminal.enabled:
-        if sys.stdout.isatty():
-            sinks.append(
-                TerminalSink(
-                    refresh_per_sec=settings.terminal.refresh_per_sec
-                )
+        sinks.append(
+            TerminalSink(
+                refresh_per_sec=settings.terminal.refresh_per_sec
             )
-        else:
-            logger.info("TerminalSink disabled: stdout is not a TTY (headless environment).")
+        )
         
     return sinks

@@ -1,10 +1,14 @@
 import sys
 import time
 import logging
+import socket
+import os
+import threading
+import asyncio
 from collections import deque
 from functools import lru_cache
 from datetime import datetime
-from typing import Optional, Final, Tuple
+from typing import Optional, Final
 
 from rich import box
 from rich.layout import Layout
@@ -14,11 +18,14 @@ from rich.table import Table
 from rich.text import Text
 from rich.console import Group
 
-from ..models import TaskPrediction, TaskPredStatus, TaskType, TaskPredTelemetry, InferenceResult
+from ..models import TaskPrediction, TaskPredStatus, TaskType, InferenceResult
+from ..adapters.struct.task_pred import pred_to_struct, pred_from_struct
 from .base import PredictionSink
 
 logger = logging.getLogger(__name__)
 
+# IPC Configuration
+SOCKET_PATH: Final = "/tmp/task_prediction.sock"
 
 class HeaderView:
     """Top bar tracking system state, rate, and uptime."""
@@ -99,7 +106,7 @@ class TaskRankingView:
         return table
 
     @lru_cache(maxsize=1024)
-    def _render_row(self, name: str, proba: float, style: str) -> Tuple[Text, Text, Text]:
+    def _render_row(self, name: str, proba: float, style: str) -> tuple[Text, Text, Text]:
         filled = int(proba * self._BAR_WIDTH)
         bar = ("█" * filled) + ("░" * (self._BAR_WIDTH - filled))
         
@@ -221,16 +228,18 @@ class TelemetryView:
 
 
 class TerminalSink(PredictionSink):
-    """Rich-based live terminal visualization."""
+    """Rich-based live terminal visualization with IPC streaming."""
     def __init__(self, refresh_per_sec: int = 10):
         self._isatty = sys.stdout.isatty()
         self._live: Optional[Live] = None
         self.refresh_per_sec = refresh_per_sec
 
+        # UI Components
         self.header = HeaderView()
         self.tasks = TaskRankingView()
         self.telemetry = TelemetryView()
 
+        # Layout Setup
         self.layout = Layout()
         self.layout.split_column(
             Layout(name="header", size=3),
@@ -245,22 +254,138 @@ class TerminalSink(PredictionSink):
         self.layout["tasks"].update(Panel(self.tasks, title="Task Estimations", border_style="white"))
         self.layout["telemetry"].update(Panel(self.telemetry, title="Prediction Diagnostics", border_style="cyan"))
 
-    async def start(self) -> None:
-        if self._isatty and self._live is None:
-            self._live = Live(self.layout, screen=True, refresh_per_second=self.refresh_per_sec)
-            self._live.start()
-        elif not self._isatty:
-            logger.info("TerminalSink disabled: stdout is not a TTY.")
+        # IPC State
+        self._clients: list[socket.socket] = []
+        self._lock = threading.Lock()
+        self._server_running = False
 
-    async def send(self, pred: TaskPrediction) -> None:
-        if not self._isatty or not self._live: return
+    async def start(self) -> None:
+        if self._isatty:
+            if self._live is None:
+                self._live = Live(self.layout, screen=True, refresh_per_second=self.refresh_per_sec)
+                self._live.start()
+        else:
+            logger.info(f"TerminalSink: Background mode. Starting IPC on {SOCKET_PATH}")
+            self._start_ipc_server()
+
+    def _start_ipc_server(self) -> None:
+        if os.path.exists(SOCKET_PATH):
+            os.remove(SOCKET_PATH)
+        
+        self._server_running = True
+        self._server_thread = threading.Thread(target=self._ipc_listener_loop, daemon=True)
+        self._server_thread.start()
+
+    def _ipc_listener_loop(self) -> None:
+        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server.bind(SOCKET_PATH)
+        server.listen(5)
+        server.settimeout(1.0)
+        
+        while self._server_running:
+            try:
+                conn, _ = server.accept()
+                with self._lock:
+                    self._clients.append(conn)
+            except socket.timeout:
+                continue
+            except Exception as e:
+                if self._server_running:
+                    logger.error(f"IPC Listener Error: {e}")
+                break
+    
+    def _update_state(self, pred: TaskPrediction) -> None:
         self.header.timestamp = pred.timestamp
         self.header.status = pred.status
         self.header.tick()
         self.telemetry.update(pred)
         self.tasks.update(pred.pred)
 
+    async def send(self, pred: TaskPrediction) -> None:
+        if self._isatty and self._live:
+            self._update_state(pred)
+        elif not self._isatty and self._clients:
+            self._broadcast(pred)
+
+    def _broadcast(self, pred: TaskPrediction) -> None:
+        """Serializes and sends binary data to all attached control centers."""
+        try:
+            payload = pred_to_struct(pred)
+            # Frame: 4-byte Big-Endian Length + Data
+            header = len(payload).to_bytes(4, 'big')
+            message = header + payload
+
+            with self._lock:
+                to_remove = []
+                for client in self._clients:
+                    try:
+                        client.sendall(message)
+                    except (BrokenPipeError, ConnectionResetError):
+                        to_remove.append(client)
+                
+                for client in to_remove:
+                    self._clients.remove(client)
+        except Exception as e:
+            logger.debug(f"Broadcast failed: {e}")
+
     async def close(self) -> None:
         if self._live:
             self._live.stop()
             self._live = None
+        
+        if self._server_running:
+            with self._lock:
+                for client in self._clients:
+                    try:
+                        client.close()
+                    except:
+                        pass
+                self._clients.clear()
+
+            if os.path.exists(SOCKET_PATH):
+                try:
+                    os.remove(SOCKET_PATH)
+                except:
+                    pass
+
+            self._server_running = False
+
+async def listen_from_ipc() -> None:
+    """Entry point for the ephemeral 'monitor' mode."""
+    if not sys.stdout.isatty():
+        print("Error: Monitor must be run in a TTY (interactive terminal).")
+        return
+
+    try:
+        reader, writer = await asyncio.open_unix_connection(SOCKET_PATH)
+    except (FileNotFoundError, ConnectionRefusedError):
+        print(f"Error: Could not connect to service. Ensure application is running and socket exists at {SOCKET_PATH}")
+        return
+
+    sink = TerminalSink()
+    await sink.start()
+
+    try:
+        while True:
+            # Read length prefix
+            header = await reader.readexactly(4)
+            length = int.from_bytes(header, 'big')
+
+            # Read full payload
+            data = await reader.readexactly(length)
+            
+            # Feed data to sink
+            await sink.send(pred_from_struct(data))
+
+    except asyncio.exceptions.IncompleteReadError:
+        # Happens cleanly if the main service shuts down while we are watching
+        pass
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass # Clean exit on Ctrl+C
+    except Exception as e:
+        print(f"Monitor Stream Interrupted: {e}")
+    finally:
+        # Clean up UI and connection
+        await sink.close()
+        writer.close()
+        await writer.wait_closed()

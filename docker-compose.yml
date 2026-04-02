@@ -1,8 +1,6 @@
 services:
   task-pred:
     build: .
-    tty: true
-    stdin_open: true
     container_name: task_prediction
 
     network_mode: host
@@ -31,6 +29,8 @@ services:
       # Logging
       - TASK_PRED__LOGGING__LEVEL=DEBUG
     
+      # Fix Matplotlib warning by pointing to a writable location
+      - MPLCONFIGDIR=/tmp/matplotlib
     volumes:
       # Mounts local ./data folder to the container's data folder
       - ./data:/app/data

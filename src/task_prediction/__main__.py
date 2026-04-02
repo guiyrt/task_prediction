@@ -1,15 +1,12 @@
-from dotenv import load_dotenv
 import asyncio
 import logging
 import nats
 import typer
-from typing import Annotated, Optional
 
 from .configs import AppSettings
 from .core.factories import create_system, create_sinks, get_logger
 from .runners.server import ServerRunner
-
-load_dotenv()
+from .sinks.terminal import listen_from_ipc
 
 # Initialize Typer CLI
 app = typer.Typer(
@@ -19,32 +16,18 @@ app = typer.Typer(
 )
 
 @app.command()
-def serve(
-    model_dir: Annotated[Optional[str], typer.Option(
-        "--model-dir", "-m", help="Override the XGBoost model directory path."
-    )] = None,
-    host: Annotated[Optional[str], typer.Option(
-        "--nats-host", "-n", help="Override the NATS broker URL."
-    )] = None,
-):
+def monitor():
+    """Start the terminal listening from IPC."""
+    asyncio.run(listen_from_ipc())
+
+@app.command()
+def serve():
     """
     Start the Real-time Prediction Server.
     
     Loads configuration from environment variables (TASK_PRED__) or .env file.
     """
-    # Load and Validate Configuration
-    # Overrides can be passed via kwargs to model_validate or env vars
-    overrides = {}
-    if model_dir:
-        overrides["model"] = {"model_dir": model_dir}
-    if host:
-        overrides["nats_host"] = host
-
-    try:
-        settings = AppSettings(**overrides)
-    except Exception as e:
-        typer.secho(f"Configuration Error: {e}", fg="red", err=True)
-        raise typer.Exit(1)
+    settings = AppSettings()
 
     # Setup Logging
     logging.getLogger("nats").setLevel(logging.ERROR)
