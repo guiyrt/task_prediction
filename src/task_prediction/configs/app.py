@@ -51,7 +51,7 @@ class ParquetSinkConfig(BaseModel):
 class AppSettings(BaseSettings):
     model: PredictorConfig
     data: DataConfig = Field(default_factory=DataConfig)
-    sampling_interval_ms: PositiveInt = 3_000
+    sampling_interval_ms: PositiveInt = 2_000
 
     # Used for sink and input data
     nats_host: str = "nats://localhost:4222"
@@ -72,3 +72,8 @@ class AppSettings(BaseSettings):
         env_nested_delimiter="__", 
         case_sensitive=False,
     )
+
+class OrchestratedSettings(AppSettings):
+    data_dir: Path = Path("./data")
+    health_subject: str = "intent.health.task_pred"
+    cmds_subject: str = "intent.cmds.task_pred"

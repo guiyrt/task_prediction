@@ -33,4 +33,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 COPY models/xgboost_hierarchical_v5/*.ubj models/xgboost_hierarchical_v5/*.json /app/model/
 
 # Entrypoint
-CMD ["task-pred", "serve"]
+CMD ["task-pred", "launch"]

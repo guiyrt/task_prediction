@@ -1,12 +1,19 @@
 services:
   task-pred:
+    restart: unless-stopped
     build: .
     container_name: task_prediction
-
-    network_mode: host
     user: 1000:1000
+    network_mode: host
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      - /home/regd/AWARE/apr25/:/app/data/
     
     environment:
+      - TASK_PRED__DATA_DIR=/app/data
       - TASK_PRED__NATS_HOST=nats://localhost:4222
       - TASK_PRED__SAMPLING_INTERVAL_MS=2000
 
@@ -31,15 +38,6 @@ services:
     
       # Fix Matplotlib warning by pointing to a writable location
       - MPLCONFIGDIR=/tmp/matplotlib
-    volumes:
-      # Mounts local ./data folder to the container's data folder
-      - ./data:/app/data
     
-    # Required for host.docker.internal to work on Linux
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    
-    restart: unless-stopped
-
 volumes:
   data:

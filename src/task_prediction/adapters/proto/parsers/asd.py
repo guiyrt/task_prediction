@@ -27,12 +27,12 @@ def _parse_callsign(fid: asd_events_pb2.FlightIdentifier) -> str:
     
     elif fid.track_number:
         identifier = f"TrackNumber{fid.track_number}"
-        logger.warning("`callsign` not present, falling back to `track_number`: %s", identifier)
+        logger.debug("`callsign` not present, falling back to `track_number`: %s", identifier)
         return identifier
     
     elif fid.uuid:
         identifier = f"UUID{fid.uuid}"
-        logger.warning("`callsign` and `track_number` not present, falling back to `uuid`: %s", identifier)
+        logger.debug("`callsign` and `track_number` not present, falling back to `uuid`: %s", identifier)
         return identifier
     
     else:
@@ -164,5 +164,5 @@ def parse_asd_proto(payload: bytes, decompress: bool = False) -> AsdEvent | None
                 return None
     
     except Exception as e:
-        logger.critical("Failed to parse ASD protobuf event: %s. Error: %s", event_name, e)
+        logger.warning("Failed to parse ASD protobuf event: %s. Error: %s", event_name, e)
         return None

@@ -1,5 +1,6 @@
 import logging
 import nats
+from pathlib import Path
 
 from ..configs import AppSettings, LoggingConfig
 from ..state.stream_buffer import StreamBuffer
@@ -41,7 +42,8 @@ def create_system(settings: AppSettings) -> TaskPredictionSystem:
 
 def create_sinks(
     settings: AppSettings,
-    nc: nats.NATS | None = None
+    nc: nats.NATS | None = None,
+    output_dir: Path | None = None,
 ) -> list[PredictionSink]:
     sinks = []
     
@@ -59,7 +61,7 @@ def create_sinks(
     if settings.parquet.enabled:
         sinks.append(
             ParquetSink(
-                output_dir=settings.parquet.output_dir,
+                output_dir=output_dir or settings.parquet.output_dir,
                 drop_when_full=settings.parquet.drop_when_full,
                 max_buffer_size=settings.parquet.max_buffer_size,
                 queue_size=settings.parquet.queue_size

@@ -49,7 +49,8 @@ class ParquetSink(PredictionSink):
         self.drop_when_full = drop_when_full
         
         # Setup file
-        output_dir.mkdir(parents=True, exist_ok=True)
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True, exist_ok=True)
         self.output_path = output_dir / f"task_prediction_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.parquet"
         
         # Internal state
