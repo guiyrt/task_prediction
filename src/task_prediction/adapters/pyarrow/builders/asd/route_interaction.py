@@ -22,6 +22,7 @@ def build_route_interaction_cols(batch: list[RouteInteraction]) -> dict[str, lis
     }
 
 ROUTE_INTERACTION_DEFINITION: TableDefinition[RouteInteraction] = TableDefinition(
+    name="route_interaction",
     schema=pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

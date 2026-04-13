@@ -18,6 +18,7 @@ def build_keyboard_shortcut_cols(batch: list[KeyboardShortcut]) -> dict[str, lis
     }
 
 KEYBOARD_SHORTCUT_DEFINITION: TableDefinition[KeyboardShortcut] = TableDefinition(
+    name="keyboard_shortcut",
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("action_name", pa.string(), nullable=False),

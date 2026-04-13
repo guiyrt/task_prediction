@@ -5,7 +5,6 @@ import pyarrow.parquet as pq
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Final
-import time
 
 from .base import PredictionSink
 from ..models import TaskPrediction

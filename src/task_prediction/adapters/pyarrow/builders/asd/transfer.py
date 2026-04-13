@@ -21,6 +21,7 @@ def build_transfer_cols(batch: list[Transfer]) -> dict[str, list[Any]]:
     }
 
 TRANSFER_DEFINITION: TableDefinition[Transfer] = TableDefinition(
+    name="transfer",
     schema=pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

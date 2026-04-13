@@ -21,6 +21,7 @@ def build_mouse_position_cols(batch: list[MousePosition]) -> dict[str, list[Any]
     }
 
 MOUSE_POSITION_DEFINITION: TableDefinition[MousePosition] = TableDefinition(
+    name="mouse_position",
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("x", pa.uint16(), nullable=False),

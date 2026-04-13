@@ -23,6 +23,7 @@ def build_gaze_cols(batch: list[GazePosition]) -> dict[str, list[Any]]:
     }
 
 GAZE_DEFINITION: TableDefinition[GazePosition] = TableDefinition(
+    name="gaze",
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("x", pa.uint16()),

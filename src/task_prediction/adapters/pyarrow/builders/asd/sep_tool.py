@@ -31,6 +31,7 @@ def build_sep_tool_cols(batch: list[SepToolBase]) -> dict[str, list[Any]]:
     }
 
 SEP_TOOL_DEFINITION: TableDefinition[SepToolBase] = TableDefinition(
+    name="sep_tool",
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("type", CATEGORY_TYPE, nullable=False),

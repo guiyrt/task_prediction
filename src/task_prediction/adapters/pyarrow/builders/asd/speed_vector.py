@@ -31,6 +31,7 @@ def build_speed_vector_cols(batch: list[SpeedVectorBase]) -> dict[str, list[Any]
     }
 
 SPEED_VECTOR_DEFINITION: TableDefinition[SpeedVectorBase] = TableDefinition(
+    name="speed_vector",
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("mode_updated__mode", CATEGORY_TYPE),

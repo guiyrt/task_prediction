@@ -31,6 +31,7 @@ def build_track_label_cols(batch: list[TrackLabelPosition]) -> dict[str, list[An
     }
 
 TRACK_LABEL_POSITION_DEFINITION: TableDefinition[TrackLabelPosition] = TableDefinition(
+    name="track_label_position",
     schema=pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

@@ -23,6 +23,7 @@ def build_track_screen_cols(batch: list[TrackScreenPosition]) -> dict[str, list[
     }
 
 TRACK_SCREEN_POSITION_DEFINITION: TableDefinition[TrackScreenPosition] = TableDefinition(
+    name="track_screen_position",
     schema=pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

@@ -26,6 +26,7 @@ def build_track_mark_cols(batch: list[TrackMark]) -> dict[str, list[Any]]:
     }
 
 TRACK_MARK_DEFINITION: TableDefinition[TrackMark] = TableDefinition(
+    name="track_mark",
     schema=pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

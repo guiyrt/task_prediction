@@ -10,6 +10,7 @@ CATEGORY_TYPE: Final[pa.DataType] = pa.dictionary(pa.uint8(), pa.string())
 @dataclass(frozen=True, slots=True)
 class TableDefinition[T]:
     """Declarative configuration and execution binding for a specific event type."""
+    name: str
     schema: pa.Schema
     extractor: Callable[[list[T]], dict[str, list[Any]]]
     compression: str = "zstd"

@@ -24,6 +24,7 @@ def build_clearance_cols(
     }
 
 CLEARANCE_DEFINITION: TableDefinition[Clearance] = TableDefinition(
+    name="clearance",
     schema = pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

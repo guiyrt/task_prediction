@@ -22,6 +22,7 @@ def build_popup_cols(batch: list[Popup]) -> dict[str, list[Any]]:
     }
 
 POPUP_DEFINITION: TableDefinition[Popup] = TableDefinition(
+    name="pop_up",
     schema=pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

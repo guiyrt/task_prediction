@@ -28,6 +28,7 @@ def build_aware_action_interaction_cols(
     }
 
 AWARE_ACTION_INTERACTION_DEFINITION: TableDefinition[AwareActionInteraction] = TableDefinition(
+    name="aware_action_interaction",
     schema = pa.schema([
         TIMESTAMP_COL,
         CALLSIGN_COL,

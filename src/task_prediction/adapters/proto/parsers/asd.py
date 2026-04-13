@@ -39,15 +39,20 @@ def _parse_callsign(fid: asd_events_pb2.FlightIdentifier) -> str:
         logger.critical("No FlightIdentifier data available, callsign will be empty.")
         return ""
 
-def parse_asd_proto(payload: bytes, decompress: bool = False) -> AsdEvent | None:
-    if decompress:
-        payload = zlib.decompress(payload)
-    
-    event = google.protobuf.json_format.Parse(
-        payload.decode(),
-        messages_pb2.Event(),
-        ignore_unknown_fields=True
-    )
+def parse_asd_proto(payload: bytes, decompress: bool = False, from_string: bool = False) -> AsdEvent | None:
+    if from_string:
+        event = messages_pb2.Event()
+        event.ParseFromString(payload)
+
+    else:
+        if decompress:
+            payload = zlib.decompress(payload)
+        
+        event = google.protobuf.json_format.Parse(
+            payload.decode(),
+            messages_pb2.Event(),
+            ignore_unknown_fields=True
+        )
 
     if event.WhichOneof("payload") != "asd_event":
             return None

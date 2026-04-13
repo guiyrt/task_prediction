@@ -57,6 +57,7 @@ def build_distance_measurement_cols(batch: list[DistanceMeasurementBase]) -> dic
     }
 
 DISTANCE_MEASUREMENT_DEFINITION: TableDefinition[DistanceMeasurementBase] = TableDefinition(
+    name="distance_measurement",
     schema=pa.schema([
         TIMESTAMP_COL,
         pa.field("measurement_id", pa.uint32(), nullable=False),
