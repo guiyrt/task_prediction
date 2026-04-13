@@ -51,7 +51,7 @@ class ParquetSink(PredictionSink):
         # Setup file
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
-        self.output_path = output_dir / f"task_prediction_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.parquet"
+        self.output_path = output_dir / f"task_prediction__{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.parquet"
         
         # Internal state
         self._queue: asyncio.Queue[TaskPrediction | EndToken] = asyncio.Queue(maxsize=queue_size)

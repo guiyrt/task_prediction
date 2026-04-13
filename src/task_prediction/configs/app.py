@@ -37,7 +37,6 @@ class TerminalSinkConfig(BaseModel):
 
 class ParquetSinkConfig(BaseModel):
     enabled: bool = True
-    output_dir: Path = Path("./data")
     drop_when_full: bool = True
     max_buffer_size: PositiveInt = 5 # Flushes every 15 seconds for 3-second predictions
     queue_size: PositiveInt = 50
@@ -55,6 +54,7 @@ class AppSettings(BaseSettings):
 
     # Used for sink and input data
     nats_host: str = "nats://localhost:4222"
+    data_dir: Path = Path("./data")
     
     # Sinks
     parquet: ParquetSinkConfig = Field(default_factory=ParquetSinkConfig)
@@ -74,6 +74,5 @@ class AppSettings(BaseSettings):
     )
 
 class OrchestratedSettings(AppSettings):
-    data_dir: Path = Path("./data")
     health_subject: str = "intent.health.task_pred"
     cmds_subject: str = "intent.cmds.task_pred"

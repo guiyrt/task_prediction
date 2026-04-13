@@ -24,7 +24,8 @@ services:
       
       # Parquet sink
       - TASK_PRED__PARQUET__ENABLED=true
-      - TASK_PRED__PARQUET__OUTPUT_DIR=/app/data
+      - TASK_PRED__PARQUET__QUEUE_SIZE=5
+      - TASK_PRED__PARQUET__MAX_BUFFER_SIZE=50
 
       # Terminal sink
       - TASK_PRED__TERMINAL__ENABLED=true
@@ -38,6 +39,3 @@ services:
     
       # Fix Matplotlib warning by pointing to a writable location
       - MPLCONFIGDIR=/tmp/matplotlib
-    
-volumes:
-  data:
