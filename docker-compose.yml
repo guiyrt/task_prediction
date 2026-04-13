@@ -10,7 +10,8 @@ services:
       - "host.docker.internal:host-gateway"
 
     volumes:
-      - /home/regd/AWARE/apr25/:/app/data/
+      - /home/ternuser/zhaw/data/:/app/data/
+      # - /home/regd/AWARE/apr25/:/app/data/
     
     environment:
       - TASK_PRED__DATA_DIR=/app/data
@@ -24,8 +25,8 @@ services:
       
       # Parquet sink
       - TASK_PRED__PARQUET__ENABLED=true
-      - TASK_PRED__PARQUET__QUEUE_SIZE=5
-      - TASK_PRED__PARQUET__MAX_BUFFER_SIZE=50
+      - TASK_PRED__PARQUET__QUEUE_SIZE=50
+      - TASK_PRED__PARQUET__MAX_BUFFER_SIZE=5
 
       # Terminal sink
       - TASK_PRED__TERMINAL__ENABLED=true
