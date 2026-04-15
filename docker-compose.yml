@@ -1,6 +1,5 @@
 services:
   task-pred:
-    restart: unless-stopped
     build: .
     container_name: task_prediction
     user: 1000:1000
@@ -10,8 +9,7 @@ services:
       - "host.docker.internal:host-gateway"
 
     volumes:
-      - /home/ternuser/zhaw/data/:/app/data/
-      # - /home/regd/AWARE/apr25/:/app/data/
+      - ./data/:/app/data/
     
     environment:
       - TASK_PRED__DATA_DIR=/app/data

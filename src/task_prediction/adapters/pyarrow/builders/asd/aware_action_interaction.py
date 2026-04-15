@@ -15,7 +15,7 @@ def build_aware_action_interaction_cols(
 
     for i, row in enumerate(batch):
         timestamp[i], callsign[i] = row.timestamp, row.callsign
-        uuid[i], status[i], details[i], suggestion_mode_enabled[i] = row.uuid, row.status.name, row.details
+        uuid[i], status[i], details[i], suggestion_mode_enabled[i] = row.uuid, row.status.name, row.details, row.suggestion_mode_enabled
         suggestion_mode_enabled[i] =  row.suggestion_mode_enabled
 
     return {

@@ -10,6 +10,7 @@ class PredictorConfig(BaseModel):
     alpha_smooth: float = Field(default=0.6, ge=0.0, le=1.0)
     force_stage_b: bool = True
     always_validate_input: bool = False
+    multiply_by_active_proba: bool = True
 
 class DataConfig(BaseModel):
     short_sec: PositiveInt = 5
@@ -47,7 +48,7 @@ class ParquetSinkConfig(BaseModel):
             raise ValueError('Queue must be bigger than buffer.')
         return self
 
-class AppSettings(BaseSettings):
+class AppSettings(BaseSettings):    
     model: PredictorConfig
     data: DataConfig = Field(default_factory=DataConfig)
     sampling_interval_ms: PositiveInt = 2_000

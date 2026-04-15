@@ -1,6 +1,6 @@
 import struct
 import io
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from ...models import TaskType, InferenceResult, TaskPredTelemetry, TaskPrediction, TaskPredStatus
 
@@ -61,7 +61,7 @@ def pred_from_struct(data: bytes) -> "TaskPrediction":
         )
 
     return TaskPrediction(
-        timestamp=datetime.fromtimestamp(ts, timezone.utc),
+        timestamp=datetime.fromtimestamp(ts, UTC),
         status=TaskPredStatus(status_val),
         telemetry=TaskPredTelemetry(g_av, g_val, asd, f_ms, i_ms),
         pred=inference,

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import pyarrow as pa
 import pyarrow.parquet as pq
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Final
 
@@ -50,7 +50,7 @@ class ParquetSink(PredictionSink):
         # Setup file
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
-        self.output_path = output_dir / f"task_prediction__{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.parquet"
+        self.output_path = output_dir / f"task_prediction__{datetime.now(UTC):%Y%m%d_%H%M%S}.parquet"
         
         # Internal state
         self._queue: asyncio.Queue[TaskPrediction | EndToken] = asyncio.Queue(maxsize=queue_size)

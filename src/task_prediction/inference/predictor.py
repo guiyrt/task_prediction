@@ -22,7 +22,8 @@ class TaskPredictor:
         self, 
         model_dir: Path,
         alpha_smooth: float = 0.6,
-        always_validate_input: bool = False
+        always_validate_input: bool = False,
+        multiply_by_active_proba: bool = True,
     ):
         self.alpha = alpha_smooth
         
@@ -54,6 +55,7 @@ class TaskPredictor:
         
         self.is_initial_validation = True
         self.always_validate_input = always_validate_input
+        self.multiply_by_active_proba = multiply_by_active_proba
         
         # State for Real-Time EMA Smoothing
         self._pB: np.ndarray | None = None
@@ -126,11 +128,13 @@ class TaskPredictor:
             if self._pB is not None
             else pB_raw
         )
+
+        mult_value = p_active if self.multiply_by_active_proba else 1.0
         
         # --- COMBINE STAGES ---
         # P(Task_i) = P(Active) * P(Task_i | Active)
         combined_probas = {
-            TaskType(task_id): p_active * float(self._pB[i])
+            TaskType(task_id): float(self._pB[i]) * mult_value
             for i, task_id in enumerate(self._active_classes)
         }
             
