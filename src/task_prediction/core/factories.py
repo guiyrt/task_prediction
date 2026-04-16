@@ -2,18 +2,11 @@ import logging
 import nats
 from pathlib import Path
 
-from ..configs import AppSettings, LoggingConfig
+from ..configs import AppSettings
 from ..state.stream_buffer import StreamBuffer
 from ..inference.predictor import TaskPredictor
 from .system import TaskPredictionSystem
 from ..sinks import ParquetSink, NATSSink, PredictionSink, TerminalSink
-
-def get_logger(settings: LoggingConfig):
-    logging.basicConfig(
-        level=settings.level,
-        format=settings.format
-    )
-    return logging.getLogger("task_prediction")
 
 logger = logging.getLogger(__name__)
 

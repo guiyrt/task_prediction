@@ -1,11 +1,12 @@
 import asyncio
 import logging
 import nats
+from nats.errors import NoServersError
 import typer
 import signal
 
 from .configs import AppSettings, OrchestratedSettings, LoggingConfig
-from .core.factories import create_system, create_sinks, get_logger
+from .core.factories import create_system, create_sinks
 from .runners.server import ServerRunner
 from .sinks.terminal import listen_from_ipc
 from .core.manager import PredictionManager
@@ -17,11 +18,14 @@ app = typer.Typer(
     help="Task Intent Prediction Engine"
 )
 
-def setup_environment(settings: LoggingConfig):
+logger = logging.getLogger(__name__)
+
+def setup_logger(settings: LoggingConfig):
     logging.getLogger("nats").setLevel(logging.ERROR)
     logging.getLogger("asyncio").setLevel(logging.ERROR)
     logging.getLogger("tsfresh").setLevel(logging.ERROR)
-    return get_logger(settings)
+    logging.getLogger("nats.aio.client").setLevel(logging.CRITICAL)
+    logging.basicConfig(level=settings.level, format=settings.format)
 
 def setup_signals(stop_event: asyncio.Event):
     """Binds Docker shutdown signals (SIGTERM/SIGINT) to our async stop_event."""
@@ -30,16 +34,54 @@ def setup_signals(stop_event: asyncio.Event):
         loop.add_signal_handler(sig, stop_event.set)
 
 async def setup_nats(host: str) -> nats.NATS:
-    """Robust top-level NATS connection."""
+    """
+    Initializes NATS with custom logging to prevent traceback spam.
+    """
     nc = nats.NATS()
-    
+
+    async def disconnected_cb():
+        logger.warning("NATS: Connection disconnected.")
+
+    async def reconnected_cb():
+        logger.info(f"NATS: Connection restored to {nc.connected_url.netloc}")
+
+    async def error_cb(e):
+        # Ignore common network noise during background reconnect attempts
+        if isinstance(e, (asyncio.TimeoutError, ConnectionRefusedError, OSError)):
+            return
+
+        err_msg = str(e).strip()
+
+        # Some NATS specific EOF/disconnect errors might bypass the instance check
+        if "empty response from server" in err_msg or "UnexpectedEOF" in err_msg:
+            return
+
+        # If it's an error with an empty string, log its class name instead
+        if not err_msg:
+            err_msg = type(e).__name__
+            
+        logger.error(f"NATS Internal Error: {err_msg}")
+
+    async def closed_cb():
+        logger.info("NATS: Connection closed.")
+
+    # Connection Loop
     while True:
         try:
-            await nc.connect(host, allow_reconnect=True, max_reconnect_attempts=-1)
-            logging.info("NATS Connected.")
+            await nc.connect(
+                host,
+                allow_reconnect=True,
+                max_reconnect_attempts=-1, # Infinite reconnection
+                reconnect_time_wait=2, # Wait 2s between attempts
+                disconnected_cb=disconnected_cb,
+                reconnected_cb=reconnected_cb,
+                error_cb=error_cb,
+                closed_cb=closed_cb,
+            )
+            logger.info(f"NATS: Initial connection established to {host}")
             return nc
-        except Exception as e:
-            logging.error(f"NATS connection failed: {e}. Retrying...")
+        except (asyncio.TimeoutError, NoServersError, OSError) as e:
+            logger.warning(f"NATS: Waiting for server at {host}... ({e})")
             await asyncio.sleep(5)
 
 @app.command()
@@ -51,7 +93,8 @@ def monitor():
 def serve():
     """Start the Real-time Prediction Server (Standalone)."""
     settings = AppSettings()
-    logger = setup_environment(settings)
+    setup_logger(settings.logging)
+    logger.debug(settings)
 
     async def _run():
         stop_event = asyncio.Event()
@@ -87,7 +130,8 @@ def serve():
 def launch():
     """Orchestrated mode (Waits for Command Center)."""
     settings = OrchestratedSettings()
-    logger = setup_environment(settings.logging)
+    setup_logger(settings.logging)
+    logger.debug(settings)
     
     async def _run():
         stop_event = asyncio.Event()
