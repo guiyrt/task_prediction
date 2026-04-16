@@ -1,3 +1,4 @@
+import re
 import sqlite3
 import logging
 import argparse
@@ -9,6 +10,7 @@ import tempfile
 import zipfile
 from collections import defaultdict
 import pyarrow.parquet as pq
+from typing import Iterator
 
 from task_prediction.adapters.proto.parsers.asd import parse_asd_proto, get_base_asd_event_type
 from task_prediction.adapters.pyarrow.builders import ASD_EVENT_DEFINITIONS
@@ -94,15 +96,50 @@ def extract_data(db_path: Path, out_folder: Path, session_id: str) -> None:
             table=event_def.build_table(event_data)
         )
 
+def process_session(session_path: Path, force: bool = False) -> None:
+    if not session_path.is_dir():
+        logger.error(f"Folder not found: {session_path}")
+
+    out_folder: Path = session_path / "asdEvents"
+
+    if out_folder.exists() and not force:
+        return
+    
+    out_folder.mkdir(exist_ok=True)
+    
+    with resolve_database(session_path) as db_path:
+        extract_data(db_path, out_folder, session_path.name)
+
+
+def discover_sessions(root_path: Path) -> Iterator[Path]:
+    """
+    Yields valid session directories within the root_path.
+    Uses os.scandir internally via Path.iterdir for better performance.
+    """
+    session_pattern = re.compile(r"^\d{3}_.+_scenario_\d$")
+
+    if not root_path.is_dir():
+        logger.error(f"Root path is not a directory: {root_path}")
+        return
+
+    for entry in root_path.iterdir():
+        if entry.is_dir() and bool(session_pattern.match(entry.name)):
+            yield entry
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("session", type=Path, help="Path to the session folder.")
+    parser.add_argument("sessions_path", type=Path, help="Path to the session folder.")
+    parser.add_argument("-f", "--force", default=False, action="store_true", help="Overwrite asd_events folder, if exists.")
     args = parser.parse_args()
 
-    if not args.session.is_dir():
-        logger.error(f"Folder not found: {args.db}")
+    sessions = list(discover_sessions(args.sessions_path))
+
+    if not sessions:
+        logger.warning(f"No folders matching pattern 'DDD_X_scenario_D' found in: %s", args.sessions_path)
         exit()
+
+    logger.info(f"Found {len(sessions)} matching sessions. Starting processing...")
     
-    with resolve_database(args.session) as db_path:
-        extract_data(db_path, args.session/"simulator", args.session.name)
+    for session_path in sessions:
+        process_session(session_path, force=args.force)

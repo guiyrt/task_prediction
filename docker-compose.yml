@@ -9,11 +9,11 @@ services:
       - "host.docker.internal:host-gateway"
 
     volumes:
-      - ./data/:/app/data/
+      - ~/data/:/app/data/
     
     environment:
       - TASK_PRED__DATA_DIR=/app/data
-      - TASK_PRED__NATS_HOST=nats://localhost:4222
+      - TASK_PRED__NATS_HOST=nats://127.0.0.1:4222
       - TASK_PRED__SAMPLING_INTERVAL_MS=2000
 
       # Model
