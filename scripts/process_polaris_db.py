@@ -103,13 +103,16 @@ def process_session(session_path: Path, force: bool = False) -> None:
     out_folder: Path = session_path / "asdEvents"
 
     if out_folder.exists() and not force:
+        logger.debug("Skipping %s, asdEvents already exists.")
         return
     
     out_folder.mkdir(exist_ok=True)
     
-    with resolve_database(session_path) as db_path:
-        extract_data(db_path, out_folder, session_path.name)
-
+    try:
+        with resolve_database(session_path) as db_path:
+            extract_data(db_path, out_folder, session_path.name)
+    except FileNotFoundError:
+        logger.warning("Skipped %s, zip file not found.", str(session_path))
 
 def discover_sessions(root_path: Path) -> Iterator[Path]:
     """
