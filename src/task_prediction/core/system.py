@@ -11,11 +11,9 @@ from ..features.pipeline import extract_all_features
 logger = logging.getLogger(__name__)
 
 class TaskPredictionSystem:
-    def __init__(self, predictor: TaskPredictor, buffer: StreamBuffer, force_stage_b: bool):
+    def __init__(self, predictor: TaskPredictor, buffer: StreamBuffer):
         self.predictor = predictor
         self.buffer = buffer
-
-        self.force_stage_b = force_stage_b
 
     def ingest_gaze(self, event: GazePosition) -> None:
         """Buffers a domain-native gaze point."""
@@ -57,10 +55,7 @@ class TaskPredictionSystem:
             
             # ML Inference
             start_inf_time = time.perf_counter()
-            pred = self.predictor.predict(
-                features=features, 
-                force_stage_b=self.force_stage_b
-            )
+            pred = self.predictor.predict(features)
             inf_time = (time.perf_counter() - start_inf_time) * 1_000.0
             telemetry = replace(telemetry, inference_time_ms=inf_time)
             

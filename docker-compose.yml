@@ -20,6 +20,7 @@ services:
       - TASK_PRED__MODEL__MODEL_DIR=/app/model
       - TASK_PRED__MODEL__FORCE_STAGE_B=true
       - TASK_PRED__MODEL__ALWAYS_VALIDATE_INPUT=true
+      - TASK_PRED__MODEL__MULTIPLY_BY_ACTIVE_PROBA=true
       
       # Parquet sink
       - TASK_PRED__PARQUET__ENABLED=true

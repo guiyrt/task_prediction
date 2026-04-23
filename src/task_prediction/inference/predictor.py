@@ -22,10 +22,12 @@ class TaskPredictor:
         self, 
         model_dir: Path,
         alpha_smooth: float = 0.6,
+        force_stage_b: bool = False,
         always_validate_input: bool = False,
         multiply_by_active_proba: bool = True,
     ):
         self.alpha = alpha_smooth
+        self.force_stage_b = force_stage_b
         
         # Load models
         self.booster_a = xgb.Booster()
@@ -85,7 +87,6 @@ class TaskPredictor:
     def predict(
         self, 
         features: FeatureDict, 
-        force_stage_b: bool = False
     ) -> InferenceResult:
         """Executes hierarchical inference for a given snapshot in time."""
         
@@ -108,7 +109,7 @@ class TaskPredictor:
         # Short-circuit logic: If clearly idle, skip Stage B to save compute.
         is_active_gate = (p_active >= self.threshold_a)
 
-        if not is_active_gate and not force_stage_b:
+        if not is_active_gate and not self.force_stage_b:
             # We are Idle. Reset Stage B smoothing state because the user stopped a task.
             self.reset_state()
             
@@ -129,13 +130,16 @@ class TaskPredictor:
             else pB_raw
         )
 
-        mult_value = p_active if self.multiply_by_active_proba else 1.0
-        
-        # --- COMBINE STAGES ---
-        # P(Task_i) = P(Active) * P(Task_i | Active)
-        combined_probas = {
-            TaskType(task_id): float(self._pB[i]) * mult_value
+        # Output from stage B        
+        raw_task_probas = {
+            TaskType(task_id): float(self._pB[i])
             for i, task_id in enumerate(self._active_classes)
+        }
+
+        # P(Task_i) = P(Active) * P(Task_i | Active)
+        combined_task_probas = {
+            task: proba * p_active
+            for task, proba in raw_task_probas.items()
         }
             
         # Find the highest combined probability
@@ -145,7 +149,7 @@ class TaskPredictor:
         max_p = p_idle
         is_active_final = False
         
-        for task_type, proba in combined_probas.items():
+        for task_type, proba in combined_task_probas.items():
             if proba > max_p:
                 max_p = proba
                 max_task = task_type
@@ -155,5 +159,5 @@ class TaskPredictor:
             is_active=is_active_final,
             active_proba=p_active,
             pred_task=max_task if is_active_final else None,
-            task_probas=combined_probas
+            task_probas=combined_task_probas if self.multiply_by_active_proba else raw_task_probas,
         )

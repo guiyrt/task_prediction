@@ -14,7 +14,9 @@ def create_system(settings: AppSettings) -> TaskPredictionSystem:
     predictor = TaskPredictor(
         model_dir=settings.model.model_dir,
         alpha_smooth=settings.model.alpha_smooth,
-        always_validate_input=settings.model.always_validate_input
+        force_stage_b=settings.model.force_stage_b,
+        always_validate_input=settings.model.always_validate_input,
+        multiply_by_active_proba=settings.model.multiply_by_active_proba
     )
     
     buffer = StreamBuffer(
@@ -29,8 +31,7 @@ def create_system(settings: AppSettings) -> TaskPredictionSystem:
     
     return TaskPredictionSystem(
         predictor=predictor, 
-        buffer=buffer,
-        force_stage_b=settings.model.force_stage_b
+        buffer=buffer
     )
 
 def create_sinks(
