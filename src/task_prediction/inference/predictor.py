@@ -23,8 +23,8 @@ class TaskPredictor:
         model_dir: Path,
         alpha_smooth: float = 0.6,
         force_stage_b: bool = False,
-        always_validate_input: bool = False,
-        multiply_by_active_proba: bool = True,
+        validate_input: bool = False,
+        multiply_by_active_proba: bool = False,
     ):
         self.alpha = alpha_smooth
         self.force_stage_b = force_stage_b
@@ -56,7 +56,7 @@ class TaskPredictor:
         self._active_classes: Final[list[int]] = metadata_b["classes"]
         
         self.is_initial_validation = True
-        self.always_validate_input = always_validate_input
+        self.validate_input = validate_input
         self.multiply_by_active_proba = multiply_by_active_proba
         
         # State for Real-Time EMA Smoothing
@@ -75,7 +75,7 @@ class TaskPredictor:
         
         # Features that are present but not used
         if (extra := actual_keys - self._expected_keys):
-            logger.warning(f"EXTRA FEATURES ({len(extra)}): {list(extra)}... (will be filled with 0.0)")
+            logger.warning(f"EXTRA FEATURES ({len(extra)}): {list(extra)}... (will be ignored)")
         
         for k, val in features.items():
             if not isinstance(val, (float, np.number, int, bool)):
@@ -90,9 +90,8 @@ class TaskPredictor:
     ) -> InferenceResult:
         """Executes hierarchical inference for a given snapshot in time."""
         
-        if self.is_initial_validation or self.always_validate_input:
+        if self.validate_input:
             self._validate_input(features)
-            self.is_initial_validation = False
         
         x = self._prepare_input(features)
         

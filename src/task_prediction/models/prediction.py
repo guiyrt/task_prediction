@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 
 class TaskType(IntEnum):
+    IDLE = -1
     AIRCRAFT_REQUEST = 0
     ASSUME = 1
     CONFLICT_RESOLUTION = 2

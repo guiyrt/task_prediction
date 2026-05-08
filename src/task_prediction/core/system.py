@@ -45,7 +45,6 @@ class TaskPredictionSystem:
                     telemetry=buffer_out.telemetry,
                     pred=None
                 )
-            
 
             # Compute features
             start_feat_time = time.perf_counter()
