@@ -15,7 +15,7 @@ def create_system(settings: AppSettings) -> TaskPredictionSystem:
         model_dir=settings.model.model_dir,
         alpha_smooth=settings.model.alpha_smooth,
         force_stage_b=settings.model.force_stage_b,
-        always_validate_input=settings.model.always_validate_input,
+        validate_input=settings.model.validate_input,
         multiply_by_active_proba=settings.model.multiply_by_active_proba
     )
     

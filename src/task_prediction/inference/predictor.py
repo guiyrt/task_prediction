@@ -23,7 +23,7 @@ class TaskPredictor:
         model_dir: Path,
         alpha_smooth: float = 0.6,
         force_stage_b: bool = False,
-        validate_input: bool = False,
+        validate_input: bool = True,
         multiply_by_active_proba: bool = False,
     ):
         self.alpha = alpha_smooth

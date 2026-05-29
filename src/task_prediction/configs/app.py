@@ -9,8 +9,8 @@ class PredictorConfig(BaseModel):
     model_dir: Path
     alpha_smooth: float = Field(default=0.6, ge=0.0, le=1.0)
     force_stage_b: bool = True
-    always_validate_input: bool = False
-    multiply_by_active_proba: bool = True
+    validate_input: bool = True
+    multiply_by_active_proba: bool = False
 
 class DataConfig(BaseModel):
     short_sec: PositiveInt = 5
