@@ -55,7 +55,7 @@ class PipelineEvaluator:
             "stage_2": evaluate_multiclass(*resolve_stage2(ok_df_group, self.idle_label), self.active_labels),
             "joint": evaluate_multiclass(*resolve_joint(ok_df_group, self.idle_label), self.joint_labels),
             "accuracy": evaluate_accuracy(ok_df_group, self.active_labels, self.idle_label),
-            # "atl": evaluate_atl(ok_df_group)
+            "atl": evaluate_atl(ok_df_group)
         }
 
     def evaluate(self, aligned_df: pd.DataFrame):
