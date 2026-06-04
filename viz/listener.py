@@ -242,7 +242,7 @@ def generate_ui():
 # MAIN LOOP
 # ---------------------------------------------------------------------------
 async def main():
-    nc = await nats.connect("nats://192.168.68.64:4222")
+    nc = await nats.connect("nats://127.0.0.1:4222")
     
     for coro in [gaze_sub(nc), task_sub(nc), attention_sub(nc), asd_sub(nc)]:
         asyncio.create_task(coro)
