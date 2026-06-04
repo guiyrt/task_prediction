@@ -46,9 +46,12 @@ class TableDefinition[T]:
             schema=self.schema,
         )
     
-    def build_df(self, batch: list[T]) -> pd.DataFrame:
+    def build_df(self, batch: list[T], ts_as_index: bool = True) -> pd.DataFrame:
         """Builds the PyArrow table and converts it to a zero-copy Pandas DataFrame."""
         df = self.build_table(batch).to_pandas(types_mapper=pd.ArrowDtype)
-        df.set_index("timestamp", drop=False, inplace=True)
-        df.sort_index(kind="stable", inplace=True)
+
+        if ts_as_index:
+            df.set_index("timestamp", drop=False, inplace=True)
+            df.sort_index(kind="stable", inplace=True)
+
         return df
