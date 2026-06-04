@@ -3,11 +3,11 @@ import logging
 from pathlib import Path
 
 from .app.dashboard import create_app
-from .core.create_labels_parquet import process_dataset_labels
+from ..processing.process_labels_and_preds import process_dataset_labels
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Run the ATC Task Analytics Dashboard")
     parser.add_argument(
         "dataset_folder", 
@@ -36,3 +36,6 @@ if __name__ == "__main__":
         
     except Exception as e:
         logging.error(f"Failed to start dashboard: {e}")
+
+if __name__ == "__main__":
+    main()

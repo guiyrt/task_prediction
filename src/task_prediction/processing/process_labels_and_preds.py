@@ -7,10 +7,10 @@ from pathlib import Path
 import pyarrow.parquet as pq
 from datetime import datetime, timezone
 
-from ...models import TaskLabel, TaskType, AsaSupportMode, RunId, TaskGroundTruth
-from ...adapters.pyarrow.builders import TASK_LABEL_DEFINITION, TASK_GT_DEFINITION
-from .ground_truth import build_ground_truth_boundaries
-from .alignment import align_preds_with_gt, align_preds_with_atl_rank, align_preds_with_aircraft_attention
+from ..models import TaskLabel, TaskType, AsaSupportMode, RunId, TaskGroundTruth
+from ..adapters.pyarrow.builders import TASK_LABEL_DEFINITION, TASK_GT_DEFINITION
+from .helpers.ground_truth import build_ground_truth_boundaries
+from .helpers.alignment import align_preds_with_gt, align_preds_with_atl_rank, align_preds_with_aircraft_attention
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -189,14 +189,16 @@ def process_dataset_labels(dataset_folder: Path):
 
         if all_ac_attentions:
             aligned_df = align_preds_with_aircraft_attention(aligned_df, ac_attention_df)
-            aligned_df = align_preds_with_atl_rank(aligned_df, pd.read_parquet(dataset_folder / "atl.parquet", dtype_backend="pyarrow"))
+
+            atl_parquet_path = dataset_folder / "atl.parquet"
+            if atl_parquet_path.exists():
+                aligned_df = align_preds_with_atl_rank(aligned_df, pd.read_parquet(atl_parquet_path, dtype_backend="pyarrow"))
         
         aligned_df.to_parquet(dataset_folder / "predictions.parquet")
 
         logger.info("Successfully wrote %d predictions with labels.", len(aligned_df))
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset_folder", type=Path)
     parser.add_argument("-f", "--force", default=False, action="store_true")
@@ -215,3 +217,7 @@ if __name__ == "__main__":
         exit()
     
     process_dataset_labels(args.dataset_folder)
+
+
+if __name__ == "__main__":
+    main()

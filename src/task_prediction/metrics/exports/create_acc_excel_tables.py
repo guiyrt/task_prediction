@@ -71,8 +71,6 @@ def create_acc_excel_tables(
             # Write to its own sheet in the Excel file
             table_df.to_excel(writer, sheet_name=table_title)
 
-    logger.info("Successfully exported 3 publication tables to %s", output_path)
-
 def main():
     parser = argparse.ArgumentParser(
         description="Generate publication-ready Word/Excel tables from a JSON metrics file."

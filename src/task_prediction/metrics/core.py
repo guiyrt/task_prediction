@@ -152,7 +152,7 @@ def evaluate_atl(df: pd.DataFrame, idle_label: str = "IDLE") -> dict[str, Any]:
     predictions for both Stage 2 and the Joint pipeline.
     """
     total_predictions = len(df)
-    if total_predictions == 0:
+    if total_predictions == 0 or "atl_timestamp" not in df:
         return {
             "context_coverage": None,
             "gt_contextual_recall": None,

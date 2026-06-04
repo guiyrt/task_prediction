@@ -129,8 +129,7 @@ def discover_sessions(root_path: Path) -> Iterator[Path]:
         if entry.is_dir() and bool(session_pattern.match(entry.name)):
             yield entry
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("sessions_path", type=Path, help="Path to the session folder.")
     parser.add_argument("-f", "--force", default=False, action="store_true", help="Overwrite asd_events folder, if exists.")
@@ -146,3 +145,6 @@ if __name__ == "__main__":
     
     for session_path in sessions:
         process_session(session_path, force=args.force)
+
+if __name__ == "__main__":
+    main()

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from task_prediction.models import TaskLabel, TaskType, RunId, TaskGroundTruth
-from task_prediction.analytics.core.ground_truth import build_ground_truth_boundaries
+from task_prediction.processing.helpers.ground_truth import build_ground_truth_boundaries
 
 # --- Mocks / Helpers ---
 # We use a fixed base time so our tests are deterministic and easy to read

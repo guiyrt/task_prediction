@@ -25,6 +25,11 @@ dependencies = [
 
 [project.scripts]
 task-pred = "task_prediction.__main__:app"
+analytics = "task_prediction.analytics.__main__:main"
+metrics = "task_prediction.metrics.__main__:main"
+process_polaris_db = "task_prediction.processing.process_polaris_db:main"
+process_labels_and_preds = "task_prediction.processing.process_labels_and_preds:main"
+process_atl = "task_prediction.processing.process_atl:main"
 
 [build-system]
 requires = ["uv_build>=0.9.6,<0.10.0"]
