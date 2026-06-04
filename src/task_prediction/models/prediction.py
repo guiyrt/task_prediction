@@ -1,6 +1,7 @@
 from datetime import datetime
 from dataclasses import dataclass, field
 from enum import IntEnum
+from typing import TypeAlias, Literal, get_args
 
 class TaskType(IntEnum):
     IDLE = -1
@@ -18,6 +19,25 @@ class TaskType(IntEnum):
     RETURN_TO_ROUTE = 11
     TRANSFER = 12
     ZONE_CONFLICT = 13
+
+ActiveTaskType: TypeAlias = Literal[
+    TaskType.AIRCRAFT_REQUEST,
+    TaskType.ASSUME,
+    TaskType.CONFLICT_RESOLUTION,
+    TaskType.ENTRY_CONDITIONS,
+    TaskType.ENTRY_CONFLICT_RESOLUTION,
+    TaskType.ENTRY_COORDINATION,
+    TaskType.EXIT_CONDITIONS,
+    TaskType.EXIT_CONFLICT_RESOLUTION,
+    TaskType.EXIT_COORDINATION,
+    TaskType.NON_CONFORMANCE_RESOLUTION,
+    TaskType.QUALITY_OF_SERVICE,
+    TaskType.RETURN_TO_ROUTE,
+    TaskType.TRANSFER,
+    TaskType.ZONE_CONFLICT
+]
+ACTIVE_TASK_TYPES: list[TaskType] = list(get_args(ActiveTaskType))
+ACTIVE_TASK_NAMES: list[str] = [task.name for task in ACTIVE_TASK_TYPES]
 
 class TaskPredStatus(IntEnum):
     WARMING_UP = 0

@@ -5,18 +5,15 @@ import argparse
 import pandas as pd
 from pathlib import Path
 import pyarrow.parquet as pq
-from typing import NamedTuple
 from datetime import datetime, timezone
 
-from task_prediction.models import TaskLabel, TaskType, AsaSupportMode
-from task_prediction.adapters.pyarrow.builders import TASK_LABEL_DEFINITION
+from ...models import TaskLabel, TaskType, AsaSupportMode, RunId, TaskGroundTruth
+from ...adapters.pyarrow.builders import TASK_LABEL_DEFINITION, TASK_GT_DEFINITION
+from .ground_truth import build_ground_truth_boundaries
+from .alignment import align_preds_with_gt, align_preds_with_aircraft_attention
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
-
-class RunId(NamedTuple):
-    participant_id: int
-    scenario_id: int
 
 def _parse_timestamp(ts: str) -> datetime:
     return datetime.strptime(ts, "%Y-%m-%d  %H:%M:%S.%f").replace(tzinfo=timezone.utc)
@@ -24,7 +21,7 @@ def _parse_timestamp(ts: str) -> datetime:
 def _read_asa_support_mode(dataset_folder: Path) -> dict[RunId, AsaSupportMode]:
     mode_df = pd.read_csv(dataset_folder / "asa_support_modes.csv")
     
-    mode_mapping = {}
+    mode_mapping: dict[RunId, AsaSupportMode] = {}
     
     for _, row in mode_df.iterrows():
         p_id = int(row["participant_id"])
@@ -69,7 +66,7 @@ def process_scenario_labels(json_path: Path, participant_id: int, scenario_id: i
     timeline: list[TaskLabel] = []
     
     # Track the furthest timestamp we have processed so far
-    max_end_so_far = valid_labels[0].start_time 
+    max_end_so_far = valid_labels[0].start_time     
     
     for label in valid_labels:
         # If the current task starts AFTER our furthest seen end time, we found a gap!
@@ -98,6 +95,9 @@ def process_dataset_labels(dataset_folder: Path):
     session_pattern = re.compile(r"^(\d{3})_.+_scenario_(\d)$")
     
     all_labels: list[TaskLabel] = []
+    all_gt: list[TaskGroundTruth] = []
+    all_preds: list[pd.DataFrame] = []
+    all_ac_attentions: list[pd.DataFrame] = []
     
     for entry in dataset_folder.iterdir():
         if entry.is_dir():
@@ -107,28 +107,92 @@ def process_dataset_labels(dataset_folder: Path):
                 
                 json_path = entry / "taskRecognition" / f"{entry.name}_task_labelled.json"
                 if json_path.exists():
-                    all_labels.extend(
-                        process_scenario_labels(
+                    run_labels = process_scenario_labels(
                             json_path,
                             run_id.participant_id,
                             run_id.scenario_id,
                             asa_mode_mapping[run_id]
                         )
-                    )
+                    
+                    all_gt.extend(build_ground_truth_boundaries(run_labels, run_id))
+                    all_labels.extend(run_labels)
+                    
                 else:
                     logger.warning("Labels missing for session: %s", entry.name)
 
-    if not all_labels:
-        logger.error("No labels found across any scenario folders.")
-        return
+                pred_path = entry / "taskRecognition" / f"{entry.name}_task_prediction.parquet"
+                if pred_path.exists():
+                    run_preds_df = pd.read_parquet(pred_path, dtype_backend="pyarrow")
+                    
+                    # Inject the missing identifiers
+                    run_preds_df["participant_id"] = run_id.participant_id
+                    run_preds_df["scenario_id"] = run_id.scenario_id
 
-    # Build the single PyArrow table
+                    run_preds_df = run_preds_df.astype({
+                        "participant_id": "int8[pyarrow]", 
+                        "scenario_id": "int8[pyarrow]"
+                    })
+                    
+                    all_preds.append(run_preds_df)
+                
+                ac_attention_path = entry / "taskRecognition" / f"{entry.name}_aircraft_attention.parquet"
+                if ac_attention_path.exists():
+                    run_ac_attention_df = pd.read_parquet(ac_attention_path, dtype_backend="pyarrow")
+                    
+                    # Inject the missing identifiers
+                    run_ac_attention_df["participant_id"] = run_id.participant_id
+                    run_ac_attention_df["scenario_id"] = run_id.scenario_id
+
+                    run_ac_attention_df = run_ac_attention_df.astype({
+                        "participant_id": "int8[pyarrow]", 
+                        "scenario_id": "int8[pyarrow]"
+                    })
+                    
+                    all_ac_attentions.append(run_ac_attention_df)
+
+    if not all_labels:
+        logger.error("No labels found across any scenario folders. Exiting.")
+        return
+    
     pq.write_table(
         TASK_LABEL_DEFINITION.build_table(all_labels),
         dataset_folder / "labels.parquet",
         compression="zstd"
     )
+
+    pq.write_table(
+        gt_table := TASK_GT_DEFINITION.build_table(all_gt),
+        dataset_folder / "ground_truth.parquet",
+        compression="zstd"
+    )
+
     logger.info("Successfully wrote %d labels.", len(all_labels))
+
+    if not all_ac_attentions:
+        logger.error("No aircraft attention files found.")
+    else:
+        ac_attention_df = pd.concat(all_ac_attentions, ignore_index=True)
+        ac_attention_df.to_parquet(dataset_folder / "aircraft_attentions.parquet")
+    
+    if not all_preds:
+        logger.error("No prediction files found.")
+    else:
+        # Combine into a single master predictions DataFrame
+        preds_df = pd.concat(all_preds, ignore_index=True)
+        aligned_df = align_preds_with_gt(preds_df, gt_table.to_pandas(types_mapper=pd.ArrowDtype))
+
+        def get_argmax_task(probas: list[tuple[str, float]] | None) -> str | None:
+            return pd.NA if probas is pd.NA else max(probas, key=lambda x: x[1])[0]
+
+        # Apply to every row to get the hypothetical Stage 2 prediction
+        aligned_df["pred_task_stage2"] = aligned_df["task_probas"].apply(get_argmax_task)
+
+        if all_ac_attentions:
+            aligned_df = align_preds_with_aircraft_attention(aligned_df, ac_attention_df)
+        
+        aligned_df.to_parquet(dataset_folder / "predictions.parquet")
+
+        logger.info("Successfully wrote %d predictions with labels.", len(aligned_df))
 
 
 if __name__ == "__main__":
@@ -137,5 +201,16 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--force", default=False, action="store_true")
     args = parser.parse_args()
 
-    if not (args.dataset_folder / "labels.parquet").exists() or args.force:
-        process_dataset_labels(args.dataset_folder)
+    if (args.dataset_folder / "labels.parquet").exists() and not args.force:
+        logger.info("File 'labels.parquet' already exists. Use '--force' to overwrite.")
+        exit()
+
+    if (args.dataset_folder / "ground_truth.parquet").exists() and not args.force:
+        logger.info("File 'ground_truth.parquet' already exists. Use '--force' to overwrite.")
+        exit()
+
+    if (args.dataset_folder / "predictions.parquet").exists() and not args.force:
+        logger.info("File 'predictions.parquet' already exists. Use '--force' to overwrite.")
+        exit()
+    
+    process_dataset_labels(args.dataset_folder)
